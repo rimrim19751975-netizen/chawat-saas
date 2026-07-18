@@ -1,0 +1,5 @@
+node_modules/
+backend/chawat.db*
+frontend/dist/
+.env
+*.log

@@ -1,0 +1,13 @@
+{
+  "name": "chawat-saas",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "start": "node backend/server.js",
+    "build": "cd frontend && npm install && npx vite build",
+    "install:all": "cd backend && npm install && cd ../frontend && npm install"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

@@ -1,0 +1,256 @@
+import React, { useState, useEffect } from 'react';
+import { productApi, boutiqueApi, orderApi } from '../services/api.js';
+
+export default function BoutiquePage() {
+  const [boutique, setBoutique] = useState(null);
+  const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [cart, setCart] = useState([]);
+  const [form, setForm] = useState({ nom: '', telephone: '', quartier: '' });
+  const [success, setSuccess] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    boutiqueApi.getPublic('chawat').then(b => setBoutique(b)).catch(() => {});
+    productApi.list('chawat').then(d => {
+      setProducts(d.products);
+      setCategories(d.categories);
+    }).catch(() => {});
+  }, []);
+
+  function addToCart(product) {
+    setCart(prev => {
+      const exists = prev.find(i => i.id === product.id);
+      if (exists) {
+        return prev.map(i => i.id === product.id ? { ...i, qty: i.qty + 1 } : i);
+      }
+      return [...prev, { id: product.id, nom: product.nom, prix: product.prix_min, unite: product.unite, qty: 1 }];
+    });
+  }
+
+  function removeFromCart(productId) {
+    setCart(prev => {
+      const item = prev.find(i => i.id === productId);
+      if (item && item.qty > 1) {
+        return prev.map(i => i.id === productId ? { ...i, qty: i.qty - 1 } : i);
+      }
+      return prev.filter(i => i.id !== productId);
+    });
+  }
+
+  function clearCart() {
+    setCart([]);
+  }
+
+  const total = cart.reduce((sum, item) => sum + item.prix * item.qty, 0);
+
+  async function handleOrder() {
+    if (!form.nom || !form.telephone || !form.quartier) {
+      setError('Veuillez remplir tous les champs');
+      return;
+    }
+    if (cart.length === 0) {
+      setError('Votre panier est vide');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+
+    try {
+      const items = cart.map(item => ({
+        product_id: item.id,
+        product_nom: item.nom,
+        quantite: item.qty,
+        prix_unitaire: item.prix
+      }));
+
+      await orderApi.create({
+        boutique_slug: 'chawat',
+        client_nom: form.nom,
+        client_telephone: form.telephone,
+        client_quartier: form.quartier,
+        items
+      });
+
+      setSuccess(true);
+      setCart([]);
+      setForm({ nom: '', telephone: '', quartier: '' });
+    } catch (err) {
+      setError('Erreur lors de la commande: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  if (success) {
+    return (
+      <div style={pageStyle}>
+        <header style={headerStyle}>
+          <h1 style={{ margin: 0, fontSize: 24 }}>{boutique?.nom || 'Chawat Boucherie'}</h1>
+        </header>
+        <div style={{ textAlign: 'center', padding: 60, background: 'white', borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
+          <div style={{ fontSize: 64, marginBottom: 16 }}>✅</div>
+          <h2 style={{ color: '#1a5632', marginBottom: 8 }}>Commande confirmée !</h2>
+          <p style={{ color: '#666', marginBottom: 24 }}>Un livreur vous appeleras bientôt pour confirmer.</p>
+          <button onClick={() => setSuccess(false)} style={{ ...btnPrimary, fontSize: 18 }}>
+            Passer une nouvelle commande
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={pageStyle}>
+      <header style={headerStyle}>
+        <div>
+          <h1 style={{ margin: 0, fontSize: 24 }}>{boutique?.nom || 'Chawat Boucherie'}</h1>
+          <p style={{ margin: 0, opacity: 0.9, fontSize: 14 }}>Nouakchott - Livraison rapide</p>
+        </div>
+        {cart.length > 0 && (
+          <div style={{ background: 'white', color: '#1a5632', padding: '8px 16px', borderRadius: 20, fontWeight: 'bold' }}>
+            Panier: {cart.reduce((s, i) => s + i.qty, 0)} articles - {total} MRU
+          </div>
+        )}
+      </header>
+
+      <div style={{ display: 'grid', gridTemplateColumns: cart.length > 0 ? '1fr 340px' : '1fr', gap: 20 }}>
+        {/* COLONNE PRODUITS */}
+        <div>
+          {categories.map(cat => (
+            <div key={cat.id} style={{ marginBottom: 24 }}>
+              <h2 style={{ color: '#1a5632', borderBottom: '3px solid #1a5632', paddingBottom: 8, marginTop: 24 }}>{cat.nom}</h2>
+              {products.filter(p => p.categorie_id === cat.id).map(product => {
+                const inCart = cart.find(i => i.id === product.id);
+                return (
+                  <div key={product.id} style={productCardStyle}>
+                    <div style={{ flex: 1 }}>
+                      <h3 style={{ margin: '0 0 4px 0', fontSize: 16 }}>{product.nom}</h3>
+                      <p style={{ margin: 0, color: '#1a5632', fontWeight: 'bold', fontSize: 15 }}>
+                        {product.prix_min === product.prix_max
+                          ? `${product.prix_min} MRU`
+                          : `${product.prix_min} - ${product.prix_max} MRU`}
+                        <span style={{ color: '#999', fontWeight: 'normal', fontSize: 13 }}> / {product.unite}</span>
+                      </p>
+                      {product.stock > 0 && (
+                        <span style={{ fontSize: 12, color: '#28a745' }}>● En stock</span>
+                      )}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      {inCart && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <button onClick={() => removeFromCart(product.id)} style={qtyBtn}>−</button>
+                          <span style={{ fontWeight: 'bold', fontSize: 16, minWidth: 24, textAlign: 'center' }}>{inCart.qty}</span>
+                          <button onClick={() => addToCart(product)} style={qtyBtn}>+</button>
+                        </div>
+                      )}
+                      <button
+                        onClick={() => addToCart(product)}
+                        style={inCart ? btnAddMore : btnAddToCart}
+                      >
+                        {inCart ? '+ Ajouter' : 'Ajouter au panier'}
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ))}
+        </div>
+
+        {/* COLONNE PANIER */}
+        {cart.length > 0 && (
+          <div>
+            <div style={cartBoxStyle}>
+              <h2 style={{ margin: '0 0 16px 0', fontSize: 18 }}>🛒 Votre panier</h2>
+
+              {cart.map(item => (
+                <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid #eee' }}>
+                  <div style={{ flex: 1 }}>
+                    <strong style={{ fontSize: 14 }}>{item.nom}</strong>
+                    <p style={{ margin: 0, fontSize: 13, color: '#666' }}>{item.prix} MRU x {item.qty}</p>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontWeight: 'bold', fontSize: 14 }}>{item.prix * item.qty} MRU</span>
+                    <button onClick={() => removeFromCart(item.id)} style={{ background: '#dc3545', color: 'white', border: 'none', width: 24, height: 24, borderRadius: 4, cursor: 'pointer', fontSize: 14 }}>×</button>
+                  </div>
+                </div>
+              ))}
+
+              <div style={{ borderTop: '2px solid #1a5632', marginTop: 12, paddingTop: 12, display: 'flex', justifyContent: 'space-between', fontSize: 18 }}>
+                <strong>Total</strong>
+                <strong style={{ color: '#1a5632' }}>{total} MRU</strong>
+              </div>
+
+              {error && (
+                <div style={{ background: '#f8d7da', color: '#721c24', padding: 10, borderRadius: 6, marginTop: 12, fontSize: 13 }}>
+                  {error}
+                </div>
+              )}
+
+              <div style={{ marginTop: 16 }}>
+                <input
+                  placeholder="Votre nom complet"
+                  value={form.nom}
+                  onChange={e => setForm(f => ({ ...f, nom: e.target.value }))}
+                  style={inputStyle}
+                />
+                <input
+                  placeholder="Numéro WhatsApp"
+                  value={form.telephone}
+                  onChange={e => setForm(f => ({ ...f, telephone: e.target.value }))}
+                  style={inputStyle}
+                  type="tel"
+                />
+                <select
+                  value={form.quartier}
+                  onChange={e => setForm(f => ({ ...f, quartier: e.target.value }))}
+                  style={inputStyle}
+                >
+                  <option value="">Quartier de livraison</option>
+                  <option>Tevragh Zeina</option><option>Ksar</option><option>Arafat</option>
+                  <option>Soukouk</option><option>Dar Naim</option><option>Toujounine</option>
+                  <option>Riyad</option><option>Sebkha</option><option>El Mina</option>
+                </select>
+
+                <button
+                  onClick={handleOrder}
+                  disabled={loading}
+                  style={{ ...btnPrimary, width: '100%', marginTop: 8, opacity: loading ? 0.7 : 1 }}
+                >
+                  {loading ? 'Envoi en cours...' : `Commander - ${total} MRU`}
+                </button>
+                <button onClick={clearCart} style={{ width: '100%', background: 'none', border: 'none', color: '#dc3545', cursor: 'pointer', marginTop: 8, fontSize: 13 }}>
+                  Vider le panier
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div style={{ textAlign: 'center', marginTop: 24 }}>
+        <a href="/client/login" style={{ color: '#1a5632', marginRight: 16, textDecoration: 'none' }}>📋 Suivre ma commande</a>
+        <a href="/admin/login" style={{ color: '#999', textDecoration: 'none', fontSize: 13 }}>Espace boutique</a>
+      </div>
+
+      {boutique && (
+        <footer style={{ textAlign: 'center', marginTop: 32, padding: 16, color: '#666', fontSize: 13, borderTop: '1px solid #eee' }}>
+          {boutique.adresse} | {boutique.telephone}
+        </footer>
+      )}
+    </div>
+  );
+}
+
+const pageStyle = { fontFamily: 'Arial, sans-serif', maxWidth: 1100, margin: '0 auto', padding: 16 };
+const headerStyle = { background: '#1a5632', color: 'white', padding: '16px 24px', borderRadius: 12, marginBottom: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'center' };
+const productCardStyle = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 16, background: 'white', borderRadius: 8, marginBottom: 8, boxShadow: '0 1px 3px rgba(0,0,0,0.08)' };
+const cartBoxStyle = { background: 'white', borderRadius: 12, padding: 20, boxShadow: '0 2px 8px rgba(0,0,0,0.1)', position: 'sticky', top: 20 };
+const inputStyle = { width: '100%', padding: 12, marginBottom: 10, border: '1px solid #ddd', borderRadius: 6, boxSizing: 'border-box', fontSize: 14 };
+const btnAddToCart = { background: '#1a5632', color: 'white', border: 'none', padding: '10px 16px', borderRadius: 6, cursor: 'pointer', fontSize: 13, fontWeight: 'bold', whiteSpace: 'nowrap' };
+const btnAddMore = { background: '#28a745', color: 'white', border: 'none', padding: '10px 16px', borderRadius: 6, cursor: 'pointer', fontSize: 13, fontWeight: 'bold', whiteSpace: 'nowrap' };
+const btnPrimary = { background: '#1a5632', color: 'white', border: 'none', padding: 14, borderRadius: 8, cursor: 'pointer', fontSize: 16, fontWeight: 'bold' };
+const qtyBtn = { background: '#eee', border: 'none', width: 32, height: 32, borderRadius: 4, cursor: 'pointer', fontSize: 18, fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center' };
