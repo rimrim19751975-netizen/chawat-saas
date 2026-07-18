@@ -3,6 +3,7 @@ services:
     name: chawat-saas
     runtime: node
     plan: free
+    nodeVersion: 20
     buildCommand: cd frontend && npm install && npx vite build && cd ../backend && npm install
     startCommand: node backend/server.js
     envVars:
