@@ -1,79 +1,53 @@
 import React, { useState } from 'react';
 import { auth } from '../services/api.js';
+import { useLang } from '../services/LanguageContext.jsx';
+import LangSwitch from '../components/LangSwitch.jsx';
 
 export default function BoutiqueRegister() {
+  const { t, lang } = useLang();
   const [form, setForm] = useState({ nom: '', slug: '', email: '', telephone: '', adresse: '', password: '' });
   const [step, setStep] = useState('form');
   const [error, setError] = useState('');
+  const dir = lang === 'ar' ? 'rtl' : 'ltr';
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-    if (!form.nom || !form.slug || !form.email || !form.password) {
-      setError('Veuillez remplir tous les champs obligatoires');
-      return;
-    }
-    try {
-      await auth.boutiqueRegister(form);
-      setStep('payment');
-    } catch (err) {
-      setError(err.message);
-    }
+    e.preventDefault(); setError('');
+    if (!form.nom || !form.slug || !form.email || !form.password) { setError(t('fillAllFields')); return; }
+    try { await auth.boutiqueRegister(form); setStep('payment'); } catch (err) { setError(err.message); }
   };
 
   if (step === 'payment') {
+    const features = t('planFeatures');
+    const steps = t('paymentSteps');
     return (
-      <div style={pageStyle}>
+      <div style={{ ...pageStyle, direction: dir }}>
         <div style={{ maxWidth: 520, margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: 24 }}>
-            <a href="/" style={{ color: '#1a5632', textDecoration: 'none', fontSize: 28, fontWeight: 'bold' }}>🛒 Chawat</a>
+            <a href="/" style={{ color: '#1a5632', textDecoration: 'none', fontSize: 28, fontWeight: 'bold' }}>🛒 {t('appName')}</a>
+            <div style={{ marginTop: 12 }}><LangSwitch style={{ background: '#1a5632' }} /></div>
           </div>
           <div style={{ background: 'white', borderRadius: 12, padding: 32, boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
             <div style={{ textAlign: 'center', marginBottom: 24 }}>
               <div style={{ fontSize: 48, marginBottom: 8 }}>💳</div>
-              <h2 style={{ margin: '0 0 8px 0', color: '#1a5632' }}>Paiement de l'abonnement</h2>
-              <p style={{ color: '#666' }}>Votre compte <strong>{form.nom}</strong> a été créé</p>
+              <h2 style={{ margin: '0 0 8px 0', color: '#1a5632' }}>{t('paymentTitle')}</h2>
+              <p style={{ color: '#666' }}>{form.nom}</p>
             </div>
-
             <div style={{ background: '#f0f7ff', borderRadius: 8, padding: 20, marginBottom: 20 }}>
-              <h3 style={{ margin: '0 0 12px 0', textAlign: 'center' }}>Abonnement mensuel</h3>
-              <div style={{ textAlign: 'center', fontSize: 36, fontWeight: 'bold', color: '#1a5632', marginBottom: 8 }}>
-                5 000 MRU<span style={{ fontSize: 14, fontWeight: 'normal', color: '#666' }}>/mois</span>
-              </div>
-              <ul style={{ color: '#555', fontSize: 14, paddingLeft: 20, margin: 0 }}>
-                <li>Boutique en ligne personnalisée</li>
-                <li>Gestion des commandes et livraisons</li>
-                <li>Notifications WhatsApp clients</li>
-                <li>Support technique 7j/7</li>
-              </ul>
+              <h3 style={{ margin: '0 0 12px 0', textAlign: 'center' }}>{t('monthlyPlan')}</h3>
+              <div style={{ textAlign: 'center', fontSize: 36, fontWeight: 'bold', color: '#1a5632', marginBottom: 8 }}>5 000 MRU<span style={{ fontSize: 14, fontWeight: 'normal', color: '#666' }}>{t('perMonth')}</span></div>
+              <ul style={{ color: '#555', fontSize: 14, paddingLeft: 20, margin: 0 }}>{features.map((f, i) => <li key={i}>{f}</li>)}</ul>
             </div>
-
             <div style={{ background: '#fff3cd', borderRadius: 8, padding: 16, marginBottom: 20 }}>
-              <h4 style={{ margin: '0 0 8px 0' }}>📱 Comment payer ?</h4>
-              <ol style={{ margin: 0, fontSize: 14, color: '#555', paddingLeft: 20 }}>
-                <li>Envoyez <strong>5 000 MRU</strong> par <strong>Bankily</strong> au <strong>22 XX XX XX</strong></li>
-                <li>Ou par <strong>CCP</strong> : XXXX XXXX</li>
-                <li>Ou en espèces au bureau Chawat, Tevragh Zeina</li>
-                <li>Envoyez la preuve de paiement par WhatsApp au <strong>22 XX XX XX</strong></li>
-              </ol>
+              <h4 style={{ margin: '0 0 8px 0' }}>📱 {t('howToPay')}</h4>
+              <ol style={{ margin: 0, fontSize: 14, color: '#555', paddingLeft: 20 }}>{steps.map((s, i) => <li key={i}>{s}</li>)}</ol>
             </div>
-
             <div style={{ background: '#d4edda', borderRadius: 8, padding: 16, marginBottom: 20, textAlign: 'center' }}>
-              <p style={{ margin: 0, fontSize: 14, color: '#155724' }}>
-                <strong>Après paiement :</strong> Un administrateur validera votre compte sous <strong>24 heures</strong>.
-                <br />Vous recevrez une notification sur <strong>{form.email}</strong>.
-              </p>
+              <p style={{ margin: 0, fontSize: 14, color: '#155724' }}><strong>{t('afterPayment')}</strong> {t('afterPaymentMsg')} <strong>{form.email}</strong>.</p>
             </div>
-
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <a href={`https://wa.me/22222149282?text=${encodeURIComponent(`Bonjour, je viens de m'inscrire sur Chawat (${form.nom}). Voici ma preuve de paiement pour l'abonnement.`)}`}
-                target="_blank" rel="noopener noreferrer"
-                style={{ display: 'block', textAlign: 'center', background: '#25d366', color: 'white', padding: 14, borderRadius: 8, textDecoration: 'none', fontWeight: 'bold', fontSize: 16 }}>
-                📱 Envoyer la preuve par WhatsApp
-              </a>
-              <a href="/admin/login" style={{ textAlign: 'center', color: '#1a5632', fontSize: 14, textDecoration: 'none' }}>
-                Retour à la connexion
-              </a>
+              <a href={`https://wa.me/22222149282?text=${encodeURIComponent(t('sendProof'))}`} target="_blank" rel="noopener noreferrer"
+                style={{ display: 'block', textAlign: 'center', background: '#25d366', color: 'white', padding: 14, borderRadius: 8, textDecoration: 'none', fontWeight: 'bold', fontSize: 16 }}>📱 {t('sendProof')}</a>
+              <a href="/admin/login" style={{ textAlign: 'center', color: '#1a5632', fontSize: 14, textDecoration: 'none' }}>{t('backToLogin')}</a>
             </div>
           </div>
         </div>
@@ -82,42 +56,34 @@ export default function BoutiqueRegister() {
   }
 
   return (
-    <div style={pageStyle}>
+    <div style={{ ...pageStyle, direction: dir }}>
       <div style={{ maxWidth: 500, margin: '0 auto' }}>
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
-          <a href="/" style={{ color: '#1a5632', textDecoration: 'none', fontSize: 28, fontWeight: 'bold' }}>🛒 Chawat</a>
-          <h1 style={{ marginTop: 16, fontSize: 24, color: '#333' }}>Créer votre boutique</h1>
-          <p style={{ color: '#666' }}>Rejoignez la plateforme et vendez en ligne à Nouakchott</p>
+          <a href="/" style={{ color: '#1a5632', textDecoration: 'none', fontSize: 28, fontWeight: 'bold' }}>🛒 {t('appName')}</a>
+          <div style={{ marginTop: 12 }}><LangSwitch style={{ background: '#1a5632' }} /></div>
+          <h1 style={{ marginTop: 16, fontSize: 24, color: '#333' }}>{t('createBoutique')}</h1>
+          <p style={{ color: '#666' }}>{t('createBoutiqueDesc2')}</p>
         </div>
-
         <div style={{ background: 'white', borderRadius: 12, padding: 32, boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
           {error && <div style={{ background: '#f8d7da', color: '#721c24', padding: 12, borderRadius: 6, marginBottom: 16 }}>{error}</div>}
-
           <form onSubmit={handleSubmit}>
-            <label style={labelStyle}>Nom de la boutique *</label>
-            <input value={form.nom} onChange={e => setForm(f => ({ ...f, nom: e.target.value }))} style={inputStyle} placeholder="Ex: Chawat Boucherie" />
-
-            <label style={labelStyle}>Identifiant (slug) *</label>
-            <input value={form.slug} onChange={e => setForm(f => ({ ...f, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') }))} style={inputStyle} placeholder="Ex: chawat (sans espace)" />
-
-            <label style={labelStyle}>Email *</label>
-            <input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} style={inputStyle} placeholder="contact@boutique.mr" />
-
-            <label style={labelStyle}>Téléphone WhatsApp</label>
-            <input value={form.telephone} onChange={e => setForm(f => ({ ...f, telephone: e.target.value }))} style={inputStyle} placeholder="+222 22 XX XX XX" />
-
-            <label style={labelStyle}>Adresse</label>
-            <input value={form.adresse} onChange={e => setForm(f => ({ ...f, adresse: e.target.value }))} style={inputStyle} placeholder="Quartier, Nouakchott" />
-
-            <label style={labelStyle}>Mot de passe *</label>
-            <input type="password" value={form.password} onChange={e => setForm(f => ({ ...f, password: e.target.value }))} style={inputStyle} placeholder="Min. 6 caractères" />
-
-            <button type="submit" style={{ ...btnPrimary, width: '100%', marginTop: 8 }}>Créer mon compte</button>
+            <label style={labelStyle}>{t('boutiqueName')} *</label>
+            <input value={form.nom} onChange={e => setForm(f => ({ ...f, nom: e.target.value }))} style={inputStyle} />
+            <label style={labelStyle}>{t('slug')} *</label>
+            <input value={form.slug} onChange={e => setForm(f => ({ ...f, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') }))} style={inputStyle} placeholder="chawat" />
+            <label style={labelStyle}>{t('email')} *</label>
+            <input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} style={inputStyle} />
+            <label style={labelStyle}>{t('phone')}</label>
+            <input value={form.telephone} onChange={e => setForm(f => ({ ...f, telephone: e.target.value }))} style={inputStyle} placeholder="+222 XX XX XX XX" />
+            <label style={labelStyle}>{t('address')}</label>
+            <input value={form.adresse} onChange={e => setForm(f => ({ ...f, adresse: e.target.value }))} style={inputStyle} />
+            <label style={labelStyle}>{t('password')} *</label>
+            <input type="password" value={form.password} onChange={e => setForm(f => ({ ...f, password: e.target.value }))} style={inputStyle} />
+            <button type="submit" style={{ ...btnPrimary, width: '100%', marginTop: 8 }}>{t('createMyAccount')}</button>
           </form>
         </div>
-
         <div style={{ textAlign: 'center', marginTop: 20 }}>
-          <p><a href="/admin/login" style={{ color: '#1a5632' }}>Déjà inscrit ? Connectez-vous</a></p>
+          <p><a href="/admin/login" style={{ color: '#1a5632' }}>{t('alreadyRegistered')}</a></p>
         </div>
       </div>
     </div>
