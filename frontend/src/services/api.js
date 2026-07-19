@@ -1,9 +1,13 @@
 const API = '/api';
 
 async function request(endpoint, options = {}) {
-  const token = localStorage.getItem('superadmin_token') || localStorage.getItem('token');
   const headers = { 'Content-Type': 'application/json' };
-  if (token) headers['Authorization'] = `Bearer ${token}`;
+
+  const isLogin = endpoint.includes('/login') || endpoint.includes('/register');
+  if (!isLogin) {
+    const token = localStorage.getItem('superadmin_token') || localStorage.getItem('token');
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+  }
 
   const res = await fetch(`${API}${endpoint}`, { ...options, headers });
   const data = await res.json();
