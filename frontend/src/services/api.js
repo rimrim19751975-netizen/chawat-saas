@@ -1,4 +1,4 @@
-const API = import.meta.env.VITE_API_URL || '/api';
+const API = import.meta.env.VITE_API_URL || (window.location.hostname.includes('vercel.app') ? 'https://chawat-saas.onrender.com/api' : '/api');
 
 async function request(endpoint, options = {}) {
   const headers = { 'Content-Type': 'application/json' };
