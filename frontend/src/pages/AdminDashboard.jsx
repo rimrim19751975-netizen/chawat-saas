@@ -138,6 +138,8 @@ export default function AdminDashboard() {
 
   async function updateOrder(id, statut) { await orderApi.updateStatut(id, statut); loadData(); }
   async function deleteProduct(id) { if (confirm(t('confirm'))) { await apiReq(`/products/${id}`, { method: 'DELETE' }); loadData(); } }
+  function statutLabel(s) { return { en_attente: t('statutEnAttente'), en_cours: t('statutEnCours'), livre: t('statutLivre') }[s] || s; }
+  function statutColor(s) { return { en_attente: '#ffc107', en_cours: '#17a2b8', livre: '#28a745' }[s] || '#6c757d'; }
 }
 
 function StatCard({ title, value, color }) {
@@ -187,9 +189,6 @@ function Modal({ modal, setModal, categories, loadData, t }) {
     </div>
   );
 }
-
-  function statutLabel(s) { return { en_attente: t('statutEnAttente'), en_cours: t('statutEnCours'), livre: t('statutLivre') }[s] || s; }
-  function statutColor(s) { return { en_attente: '#ffc107', en_cours: '#17a2b8', livre: '#28a745' }[s] || '#6c757d'; }
 
 const cardStyle = { background: 'white', borderRadius: 10, padding: 16, marginBottom: 12, boxShadow: '0 1px 4px rgba(0,0,0,0.06)' };
 const badgeStyle = { padding: '4px 10px', borderRadius: 12, fontSize: 12, color: 'white', display: 'inline-block' };
