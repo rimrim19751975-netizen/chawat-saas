@@ -102,6 +102,13 @@ function initSchema() {
 }
 
 function seedData() {
+  const adminExist = db.prepare('SELECT COUNT(*) as c FROM super_admins').get();
+  if (adminExist.c === 0) {
+    const adminHash = bcrypt.hashSync('admin2026', 10);
+    db.prepare('INSERT INTO super_admins (email, password) VALUES (?, ?)').run('admin@chawat.mr', adminHash);
+    console.log('Super admin créé: admin@chawat.mr');
+  }
+
   const count = db.prepare('SELECT COUNT(*) as c FROM boutiques').get();
   if (count.c > 0) return;
 
@@ -110,9 +117,6 @@ function seedData() {
 
   db.prepare(`INSERT INTO boutiques (id, nom, slug, adresse, telephone, email, password, statut)
     VALUES (?, ?, ?, ?, ?, ?, ?, 'actif')`).run(boutiqueId, 'Chawat Boucherie', 'chawat', 'Nouakchott, Tevragh Zeina', '+222 22 14 92 82', 'contact@chawat.mr', hash);
-
-  const adminHash = bcrypt.hashSync('admin2026', 10);
-  db.prepare('INSERT INTO super_admins (email, password) VALUES (?, ?)').run('admin@chawat.mr', adminHash);
 
   const catViande = db.prepare(`INSERT INTO categories (boutique_id, nom) VALUES (?, ?)`).run(boutiqueId, 'Viandes').lastInsertRowid;
   const catPoulet = db.prepare(`INSERT INTO categories (boutique_id, nom) VALUES (?, ?)`).run(boutiqueId, 'Poulets').lastInsertRowid;
