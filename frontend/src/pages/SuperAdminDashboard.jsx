@@ -10,8 +10,10 @@ export default function SuperAdminDashboard() {
   const [stats, setStats] = useState({});
   const [tab, setTab] = useState('en_attente');
   const [modal, setModal] = useState(null);
+  const [copied, setCopied] = useState('');
   const navigate = useNavigate();
   const dir = lang === 'ar' ? 'rtl' : 'ltr';
+  const appUrl = window.location.origin;
 
   useEffect(() => {
     if (!localStorage.getItem('superadmin_token')) return navigate('/superadmin/login');
@@ -21,6 +23,32 @@ export default function SuperAdminDashboard() {
   function loadData() {
     superAdminApi.getBoutiques().then(setBoutiques).catch(() => navigate('/superadmin/login'));
     superAdminApi.getStats().then(setStats).catch(() => {});
+  }
+
+  function shareWhatsApp() {
+    const text = encodeURIComponent(
+      `🛒 Chawat - Plateforme de vente en ligne\n\n` +
+      `✅ ${stats.total || 0} boutiques\n` +
+      `💰 ${(stats.revenu_total || 0).toLocaleString()} MRU de revenus\n\n` +
+      `📱 Connectez votre boutique : ${appUrl}`
+    );
+    window.open(`https://wa.me/?text=${text}`, '_blank');
+  }
+
+  function shareFacebook() {
+    window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(appUrl)}`, '_blank');
+  }
+
+  function shareTwitter() {
+    const text = encodeURIComponent(`🛒 Chawat - Vendez en ligne à Nouakchott ! ${appUrl}`);
+    window.open(`https://twitter.com/intent/tweet?text=${text}`, '_blank');
+  }
+
+  function copyLink(url, label) {
+    navigator.clipboard.writeText(url).then(() => {
+      setCopied(label);
+      setTimeout(() => setCopied(''), 2000);
+    });
   }
 
   const logout = () => { localStorage.removeItem('superadmin_token'); navigate('/superadmin/login'); };
@@ -44,6 +72,36 @@ export default function SuperAdminDashboard() {
           <StatCard title={t('activeShops')} value={stats.actives || 0} icon="✅" color="#28a745" />
           <StatCard title={t('revenueTotal')} value={`${(stats.revenu_total || 0).toLocaleString()} MRU`} icon="💰" color="#17a2b8" />
         </div>
+
+        <div style={{ background: 'linear-gradient(135deg, #1a5632, #1a1a2e)', borderRadius: 12, padding: 20, marginBottom: 24, color: 'white' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
+            <div>
+              <h3 style={{ margin: '0 0 4px 0', fontSize: 18 }}>🔗 {t('shareAppTitle')}</h3>
+              <p style={{ margin: 0, opacity: 0.8, fontSize: 13 }}>{t('shareAppDesc')}</p>
+            </div>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <button onClick={() => copyLink(appUrl, 'app')} style={shareBtnStyle}>
+                {copied === 'app' ? '✓ ' + t('copied') : '🔗 ' + t('copyLink')}
+              </button>
+              <button onClick={shareWhatsApp} style={{ ...shareBtnStyle, background: '#25d366' }}>
+                📱 WhatsApp
+              </button>
+              <button onClick={shareFacebook} style={{ ...shareBtnStyle, background: '#1877f2' }}>
+                📘 Facebook
+              </button>
+              <button onClick={shareTwitter} style={{ ...shareBtnStyle, background: '#1da1f2' }}>
+                🐦 Twitter
+              </button>
+            </div>
+          </div>
+          <div style={{ marginTop: 12, background: 'rgba(255,255,255,0.15)', borderRadius: 8, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ flex: 1, fontSize: 14, wordBreak: 'break-all' }}>{appUrl}</span>
+            <button onClick={() => copyLink(appUrl, 'url')} style={{ background: 'white', color: '#1a5632', border: 'none', padding: '6px 14px', borderRadius: 6, cursor: 'pointer', fontWeight: 'bold', fontSize: 12, whiteSpace: 'nowrap' }}>
+              {copied === 'url' ? '✓' : t('copy')}
+            </button>
+          </div>
+        </div>
+
         <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
           {[{ id: 'en_attente', label: `${t('pending')} (${enAttente.length})`, color: '#ffc107' }, { id: 'actif', label: `${t('activeShops')} (${actives.length})`, color: '#28a745' }, { id: 'all', label: `${t('allBoutiques')} (${boutiques.length})`, color: '#6c757d' }].map(t2 => (
             <button key={t2.id} onClick={() => setTab(t2.id)} style={{ padding: '10px 20px', border: 'none', borderRadius: 8, cursor: 'pointer', background: tab === t2.id ? t2.color : 'white', color: tab === t2.id ? 'white' : '#333', fontWeight: tab === t2.id ? 'bold' : 'normal', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>{t2.label}</button>
@@ -127,3 +185,4 @@ const cardStyle = { background: 'white', borderRadius: 10, padding: 20, marginBo
 const badgeStyle = { padding: '4px 12px', borderRadius: 12, fontSize: 12, color: 'white', display: 'inline-block', textTransform: 'uppercase', fontWeight: 'bold' };
 const overlayStyle = { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 };
 const modalStyle = { background: 'white', borderRadius: 12, padding: 32, width: 480, maxHeight: '90vh', overflow: 'auto' };
+const shareBtnStyle = { background: 'rgba(255,255,255,0.2)', color: 'white', border: '1px solid rgba(255,255,255,0.3)', padding: '8px 14px', borderRadius: 6, cursor: 'pointer', fontSize: 13, fontWeight: 'bold', whiteSpace: 'nowrap' };

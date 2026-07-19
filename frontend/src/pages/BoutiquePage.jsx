@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import { productApi, boutiqueApi, orderApi } from '../services/api.js';
 import { useLang } from '../services/LanguageContext.jsx';
 import LangSwitch from '../components/LangSwitch.jsx';
 
 export default function BoutiquePage() {
+  const { slug } = useParams();
+  const boutiqueSlug = slug || 'chawat';
   const { t, lang } = useLang();
   const [boutique, setBoutique] = useState(null);
   const [products, setProducts] = useState([]);
@@ -13,13 +16,14 @@ export default function BoutiquePage() {
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [copied, setCopied] = useState('');
 
   const dir = lang === 'ar' ? 'rtl' : 'ltr';
 
   useEffect(() => {
-    boutiqueApi.getPublic('chawat').then(b => setBoutique(b)).catch(() => {});
-    productApi.list('chawat').then(d => { setProducts(d.products); setCategories(d.categories); }).catch(() => {});
-  }, []);
+    boutiqueApi.getPublic(boutiqueSlug).then(b => setBoutique(b)).catch(() => {});
+    productApi.list(boutiqueSlug).then(d => { setProducts(d.products); setCategories(d.categories); }).catch(() => {});
+  }, [boutiqueSlug]);
 
   function addToCart(product) {
     setCart(prev => {
@@ -38,6 +42,20 @@ export default function BoutiquePage() {
   }
 
   const total = cart.reduce((sum, item) => sum + item.prix * item.qty, 0);
+
+  function shareWhatsApp(product) {
+    const productUrl = `${window.location.origin}/boutique/${boutiqueSlug}/produit/${product.id}`;
+    const text = encodeURIComponent(`🥩 ${product.nom} - ${product.prix_min} MRU/${product.unite} | ${boutique?.nom || 'Chawat'}\n${productUrl}`);
+    window.open(`https://wa.me/?text=${text}`, '_blank');
+  }
+
+  function copyLink(product) {
+    const url = `${window.location.origin}/boutique/${boutiqueSlug}/produit/${product.id}`;
+    navigator.clipboard.writeText(url).then(() => {
+      setCopied(product.id);
+      setTimeout(() => setCopied(''), 2000);
+    });
+  }
 
   async function handleOrder() {
     if (!form.nom || !form.telephone || !form.quartier) { setError(t('errFillFields')); return; }
@@ -94,7 +112,8 @@ export default function BoutiquePage() {
                 const inCart = cart.find(i => i.id === product.id);
                 return (
                   <div key={product.id} style={productCardStyle}>
-                    <div style={{ flex: 1 }}>
+                    {product.image_url && <img src={product.image_url} alt={product.nom} style={{ width: 100, height: 100, objectFit: 'cover', borderRadius: 8, flexShrink: 0 }} />}
+                    <div style={{ flex: 1, padding: product.image_url ? '0 0 0 12px' : 0 }}>
                       <h3 style={{ margin: '0 0 4px 0', fontSize: 16 }}>{product.nom}</h3>
                       <p style={{ margin: 0, color: '#1a5632', fontWeight: 'bold', fontSize: 15 }}>
                         {product.prix_min === product.prix_max ? `${product.prix_min} MRU` : `${product.prix_min} - ${product.prix_max} MRU`}
@@ -113,6 +132,10 @@ export default function BoutiquePage() {
                       <button onClick={() => addToCart(product)} style={inCart ? btnAddMore : btnAddToCart}>
                         {inCart ? t('addMore') : t('addToCart')}
                       </button>
+                    </div>
+                    <div style={{ display: 'flex', gap: 4, marginTop: 8, paddingTop: 8, borderTop: '1px solid #f0f0f0' }}>
+                      <button onClick={() => shareWhatsApp(product)} style={shareBtn} title={t('shareOnWhatsApp')}>📱</button>
+                      <button onClick={() => copyLink(product)} style={shareBtn} title={t('copyLink')}>{copied === product.id ? '✓' : '🔗'}</button>
                     </div>
                   </div>
                 );
@@ -182,3 +205,4 @@ const btnAddToCart = { background: '#1a5632', color: 'white', border: 'none', pa
 const btnAddMore = { background: '#28a745', color: 'white', border: 'none', padding: '10px 16px', borderRadius: 6, cursor: 'pointer', fontSize: 13, fontWeight: 'bold', whiteSpace: 'nowrap' };
 const btnPrimary = { background: '#1a5632', color: 'white', border: 'none', padding: 14, borderRadius: 8, cursor: 'pointer', fontSize: 16, fontWeight: 'bold' };
 const qtyBtn = { background: '#eee', border: 'none', width: 32, height: 32, borderRadius: 4, cursor: 'pointer', fontSize: 18, fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center' };
+const shareBtn = { background: '#f0f0f0', border: 'none', width: 28, height: 28, borderRadius: 4, cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'center' };

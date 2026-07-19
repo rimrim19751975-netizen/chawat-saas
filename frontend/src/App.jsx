@@ -9,6 +9,7 @@ import ClientOrders from './pages/ClientOrders.jsx';
 import BoutiqueRegister from './pages/BoutiqueRegister.jsx';
 import SuperAdminLogin from './pages/SuperAdminLogin.jsx';
 import SuperAdminDashboard from './pages/SuperAdminDashboard.jsx';
+import ProductSharePage from './pages/ProductSharePage.jsx';
 
 function ProtectedRoute({ children, role }) {
   const token = localStorage.getItem('token');
@@ -33,6 +34,8 @@ export default function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<BoutiquePage />} />
+          <Route path="/boutique/:slug" element={<BoutiquePage />} />
+          <Route path="/boutique/:slug/produit/:productId" element={<ProductSharePage />} />
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/admin" element={<ProtectedRoute role="boutique"><AdminDashboard /></ProtectedRoute>} />
           <Route path="/boutique/register" element={<BoutiqueRegister />} />

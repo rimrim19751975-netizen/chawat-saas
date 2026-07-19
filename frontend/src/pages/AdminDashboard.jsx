@@ -10,7 +10,9 @@ async function apiReq(endpoint, options = {}) {
   const headers = { 'Content-Type': 'application/json' };
   if (token) headers['Authorization'] = `Bearer ${token}`;
   const res = await fetch(`${API}${endpoint}`, { ...options, headers });
-  const data = await res.json();
+  const text = await res.text();
+  let data;
+  try { data = JSON.parse(text); } catch { throw new Error('Erreur de connexion au serveur.'); }
   if (!res.ok) throw new Error(data.error || 'Erreur');
   return data;
 }
@@ -114,7 +116,8 @@ export default function AdminDashboard() {
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 16 }}>
                 {products.map(p => (
                   <div key={p.id} style={cardStyle}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
+                    {p.image_url && <img src={p.image_url} alt={p.nom} style={{ width: '100%', height: 160, objectFit: 'cover', borderRadius: '10px 10px 0 0' }} />}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', padding: p.image_url ? '12px 0 0 0' : 0 }}>
                       <div><h3 style={{ margin: '0 0 4px 0', fontSize: 16 }}>{p.nom}</h3><p style={{ margin: 0, color: '#666', fontSize: 13 }}>{p.categorie_nom || t('noCategory')}</p></div>
                       <span style={{ background: p.actif ? '#d4edda' : '#f8d7da', color: p.actif ? '#155724' : '#721c24', padding: '2px 8px', borderRadius: 4, fontSize: 11 }}>{p.actif ? t('active') : t('inactive')}</span>
                     </div>
@@ -147,15 +150,29 @@ function StatCard({ title, value, color }) {
 }
 
 function Modal({ modal, setModal, categories, loadData, t }) {
-  const [form, setForm] = useState(modal.data || { nom: '', prix_min: '', prix_max: '', unite: 'kg', stock: 0, categorie_id: '', actif: 1 });
+  const [form, setForm] = useState(modal.data || { nom: '', prix_min: '', prix_max: '', unite: 'kg', stock: 0, categorie_id: '', actif: 1, image_url: '' });
   const [catForm, setCatForm] = useState('');
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [preview, setPreview] = useState(modal.data?.image_url || '');
+
+  async function handleImageUpload(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const data = await productApi.uploadImage(file);
+      setForm(f => ({ ...f, image_url: data.url }));
+      setPreview(data.url);
+    } catch (err) { alert(err.message); }
+    setUploading(false);
+  }
 
   async function handleSave() {
     setLoading(true);
     try {
       if (modal.type === 'product') {
-        const body = { ...form, prix_min: Number(form.prix_min), prix_max: Number(form.prix_max || form.prix_min), stock: Number(form.stock), categorie_id: form.categorie_id ? Number(form.categorie_id) : null };
+        const body = { ...form, prix_min: Number(form.prix_min), prix_max: Number(form.prix_max || form.prix_min), stock: Number(form.stock), categorie_id: form.categorie_id ? Number(form.categorie_id) : null, image_url: form.image_url || null };
         if (modal.data) { await apiReq(`/products/${modal.data.id}`, { method: 'PUT', body: JSON.stringify(body) }); }
         else { await apiReq('/products', { method: 'POST', body: JSON.stringify(body) }); }
       }
@@ -175,6 +192,10 @@ function Modal({ modal, setModal, categories, loadData, t }) {
         {modal.type === 'product' && (<>
           <label style={labelStyle}>{t('productName')}</label>
           <input value={form.nom} onChange={e => setForm(f => ({ ...f, nom: e.target.value }))} style={inputStyle} />
+          <label style={labelStyle}>{t('productImage')}</label>
+          {preview && <img src={preview} alt="Preview" style={{ width: '100%', maxHeight: 180, objectFit: 'cover', borderRadius: 8, marginBottom: 8 }} />}
+          <input type="file" accept="image/jpeg,image/png,image/webp" onChange={handleImageUpload} disabled={uploading} style={{ ...inputStyle, padding: '8px 0' }} />
+          {uploading && <p style={{ fontSize: 12, color: '#17a2b8', margin: '0 0 12px 0' }}>{t('uploading')}...</p>}
           <div style={{ display: 'flex', gap: 12 }}><div style={{ flex: 1 }}><label style={labelStyle}>{t('priceMin')}</label><input type="number" value={form.prix_min} onChange={e => setForm(f => ({ ...f, prix_min: e.target.value }))} style={inputStyle} /></div><div style={{ flex: 1 }}><label style={labelStyle}>{t('priceMax')}</label><input type="number" value={form.prix_max} onChange={e => setForm(f => ({ ...f, prix_max: e.target.value }))} style={inputStyle} /></div></div>
           <div style={{ display: 'flex', gap: 12 }}><div style={{ flex: 1 }}><label style={labelStyle}>{t('unit')}</label><select value={form.unite} onChange={e => setForm(f => ({ ...f, unite: e.target.value }))} style={inputStyle}><option value="kg">kg</option><option value="pièce">pièce</option><option value="litre">litre</option></select></div><div style={{ flex: 1 }}><label style={labelStyle}>{t('stock')}</label><input type="number" value={form.stock} onChange={e => setForm(f => ({ ...f, stock: e.target.value }))} style={inputStyle} /></div></div>
           <label style={labelStyle}>{t('category')}</label>

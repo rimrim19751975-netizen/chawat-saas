@@ -10,7 +10,9 @@ async function request(endpoint, options = {}) {
   }
 
   const res = await fetch(`${API}${endpoint}`, { ...options, headers });
-  const data = await res.json();
+  const text = await res.text();
+  let data;
+  try { data = JSON.parse(text); } catch { throw new Error('Erreur de connexion au serveur. Réessayez dans quelques instants.'); }
   if (!res.ok) throw new Error(data.error || 'Erreur serveur');
   return data;
 }
@@ -30,12 +32,26 @@ export const boutiqueApi = {
 
 export const productApi = {
   list: (slug) => request(`/products/${slug}`),
+  single: (id) => request(`/products/single/${id}`),
   my: () => request('/products/my'),
   create: (data) => request('/products', { method: 'POST', body: JSON.stringify(data) }),
   update: (id, data) => request(`/products/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   delete: (id) => request(`/products/${id}`, { method: 'DELETE' }),
   categories: () => request('/products/categories/all'),
   createCategory: (data) => request('/products/categories', { method: 'POST', body: JSON.stringify(data) }),
+  uploadImage: async (file) => {
+    const headers = {};
+    const token = localStorage.getItem('superadmin_token') || localStorage.getItem('token');
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    const formData = new FormData();
+    formData.append('image', file);
+    const res = await fetch(`${API}/products/upload`, { method: 'POST', headers, body: formData });
+    const text = await res.text();
+    let data;
+    try { data = JSON.parse(text); } catch { throw new Error('Erreur de connexion au serveur.'); }
+    if (!res.ok) throw new Error(data.error || 'Erreur upload');
+    return data;
+  },
 };
 
 export const orderApi = {
