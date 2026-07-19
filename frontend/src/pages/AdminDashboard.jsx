@@ -4,19 +4,6 @@ import { boutiqueApi, productApi, orderApi } from '../services/api.js';
 import { useLang } from '../services/LanguageContext.jsx';
 import LangSwitch from '../components/LangSwitch.jsx';
 
-const API = '/api';
-async function apiReq(endpoint, options = {}) {
-  const token = localStorage.getItem('token');
-  const headers = { 'Content-Type': 'application/json' };
-  if (token) headers['Authorization'] = `Bearer ${token}`;
-  const res = await fetch(`${API}${endpoint}`, { ...options, headers });
-  const text = await res.text();
-  let data;
-  try { data = JSON.parse(text); } catch { throw new Error('Erreur de connexion au serveur.'); }
-  if (!res.ok) throw new Error(data.error || 'Erreur');
-  return data;
-}
-
 export default function AdminDashboard() {
   const { t, lang } = useLang();
   const [boutique, setBoutique] = useState(null);
@@ -35,8 +22,8 @@ export default function AdminDashboard() {
 
   function loadData() {
     orderApi.listBoutique().then(setOrders).catch(() => {});
-    apiReq('/products/my').then(setProducts).catch(() => {});
-    apiReq('/products/categories/all').then(setCategories).catch(() => {});
+    productApi.my().then(setProducts).catch(() => {});
+    productApi.categories().then(setCategories).catch(() => {});
   }
 
   const logout = () => { localStorage.clear(); navigate('/admin/login'); };
@@ -140,7 +127,7 @@ export default function AdminDashboard() {
   );
 
   async function updateOrder(id, statut) { await orderApi.updateStatut(id, statut); loadData(); }
-  async function deleteProduct(id) { if (confirm(t('confirm'))) { await apiReq(`/products/${id}`, { method: 'DELETE' }); loadData(); } }
+  async function deleteProduct(id) { if (confirm(t('confirm'))) { await productApi.delete(id); loadData(); } }
   function statutLabel(s) { return { en_attente: t('statutEnAttente'), en_cours: t('statutEnCours'), livre: t('statutLivre') }[s] || s; }
   function statutColor(s) { return { en_attente: '#ffc107', en_cours: '#17a2b8', livre: '#28a745' }[s] || '#6c757d'; }
 }
@@ -173,10 +160,10 @@ function Modal({ modal, setModal, categories, loadData, t }) {
     try {
       if (modal.type === 'product') {
         const body = { ...form, prix_min: Number(form.prix_min), prix_max: Number(form.prix_max || form.prix_min), stock: Number(form.stock), categorie_id: form.categorie_id ? Number(form.categorie_id) : null, image_url: form.image_url || null };
-        if (modal.data) { await apiReq(`/products/${modal.data.id}`, { method: 'PUT', body: JSON.stringify(body) }); }
-        else { await apiReq('/products', { method: 'POST', body: JSON.stringify(body) }); }
+        if (modal.data) { await productApi.update(modal.data.id, body); }
+        else { await productApi.create(body); }
       }
-      if (modal.type === 'category') { await apiReq('/products/categories', { method: 'POST', body: JSON.stringify({ nom: catForm }) }); }
+      if (modal.type === 'category') { await productApi.createCategory({ nom: catForm }); }
       loadData(); setModal(null);
     } catch (err) { alert(err.message); }
     setLoading(false);
