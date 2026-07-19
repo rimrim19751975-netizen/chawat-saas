@@ -73,7 +73,7 @@ export default function AdminDashboard() {
                 <div key={o.id} style={cardStyle}>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                     <div><strong>{o.client_nom}</strong> — {o.client_quartier}<p style={{ margin: 0, fontSize: 13, color: '#666' }}>{o.client_telephone}</p></div>
-                    <div style={{ textAlign: 'right' }}><span style={{ ...badgeStyle, background: statutColor(o.statut) }}>{o.statut}</span><p style={{ fontWeight: 'bold', marginTop: 4 }}>{o.total} MRU</p></div>
+                    <div style={{ textAlign: 'right' }}><span style={{ ...badgeStyle, background: statutColor(o.statut) }}>{statutLabel(o.statut)}</span><p style={{ fontWeight: 'bold', marginTop: 4 }}>{o.total} MRU</p></div>
                   </div>
                 </div>
               ))}
@@ -85,7 +85,7 @@ export default function AdminDashboard() {
                 <h2>{t('navOrders')} ({orders.length})</h2>
                 <div style={{ display: 'flex', gap: 8 }}>
                   {['en_attente', 'en_cours', 'livre'].map(s => (
-                    <span key={s} style={{ background: statutColor(s), color: 'white', padding: '4px 10px', borderRadius: 12, fontSize: 12 }}>{s}: {orders.filter(o => o.statut === s).length}</span>
+                    <span key={s} style={{ background: statutColor(s), color: 'white', padding: '4px 10px', borderRadius: 12, fontSize: 12 }}>{statutLabel(s)}: {orders.filter(o => o.statut === s).length}</span>
                   ))}
                 </div>
               </div>
@@ -93,7 +93,7 @@ export default function AdminDashboard() {
                 <div key={order.id} style={{ ...cardStyle, borderLeft: dir === 'rtl' ? 'none' : `4px solid ${statutColor(order.statut)}`, borderRight: dir === 'rtl' ? `4px solid ${statutColor(order.statut)}` : 'none' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
                     <div><strong>{order.client_nom}</strong><p style={{ margin: 0, fontSize: 13, color: '#666' }}>📞 {order.client_telephone} | 📍 {order.client_quartier}</p><p style={{ margin: 0, fontSize: 12, color: '#999' }}>{new Date(order.date_creation).toLocaleString('fr-FR')}</p></div>
-                    <div style={{ textAlign: 'right' }}><span style={{ ...badgeStyle, background: statutColor(order.statut) }}>{order.statut}</span><p style={{ fontWeight: 'bold', fontSize: 18, marginTop: 4 }}>{order.total} MRU</p></div>
+                    <div style={{ textAlign: 'right' }}><span style={{ ...badgeStyle, background: statutColor(order.statut) }}>{statutLabel(order.statut)}</span><p style={{ fontWeight: 'bold', fontSize: 18, marginTop: 4 }}>{order.total} MRU</p></div>
                   </div>
                   {order.items?.map(item => (<div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', fontSize: 14, color: '#555', borderTop: '1px solid #f0f0f0' }}><span>{item.product_nom} × {item.quantite}</span><span>{item.prix_unitaire * item.quantite} MRU</span></div>))}
                   <div style={{ display: 'flex', gap: 8, marginTop: 12, paddingTop: 12, borderTop: '1px solid #f0f0f0' }}>
@@ -188,7 +188,8 @@ function Modal({ modal, setModal, categories, loadData, t }) {
   );
 }
 
-function statutColor(s) { return { en_attente: '#ffc107', en_cours: '#17a2b8', livre: '#28a745' }[s] || '#6c757d'; }
+  function statutLabel(s) { return { en_attente: t('statutEnAttente'), en_cours: t('statutEnCours'), livre: t('statutLivre') }[s] || s; }
+  function statutColor(s) { return { en_attente: '#ffc107', en_cours: '#17a2b8', livre: '#28a745' }[s] || '#6c757d'; }
 
 const cardStyle = { background: 'white', borderRadius: 10, padding: 16, marginBottom: 12, boxShadow: '0 1px 4px rgba(0,0,0,0.06)' };
 const badgeStyle = { padding: '4px 10px', borderRadius: 12, fontSize: 12, color: 'white', display: 'inline-block' };

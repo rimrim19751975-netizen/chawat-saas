@@ -14,6 +14,7 @@ export default function ClientOrders() {
   useEffect(() => { orderApi.listClient().then(setOrders).catch(() => navigate('/client/login')); }, []);
   const logout = () => { localStorage.removeItem('token'); localStorage.removeItem('role'); localStorage.removeItem('client'); navigate('/'); };
   const statutColor = { en_attente: '#ffc107', en_cours: '#17a2b8', livre: '#28a745' };
+  function statutLabel(s) { return { en_attente: t('statutEnAttente'), en_cours: t('statutEnCours'), livre: t('statutLivre') }[s] || s; }
 
   return (
     <div style={{ fontFamily: 'Arial, sans-serif', maxWidth: 600, margin: '0 auto', padding: 16, direction: dir }}>
@@ -28,7 +29,7 @@ export default function ClientOrders() {
         <div key={order.id} style={{ border: '1px solid #eee', borderRadius: 8, padding: 16, marginBottom: 12 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
             <span style={{ fontSize: 13, color: '#666' }}>#{order.id.slice(0, 8)} • {new Date(order.date_creation).toLocaleDateString('fr-FR')}</span>
-            <span style={{ background: statutColor[order.statut] || '#6c757d', color: 'white', padding: '4px 8px', borderRadius: 4, fontSize: 12 }}>{order.statut}</span>
+            <span style={{ background: statutColor[order.statut] || '#6c757d', color: 'white', padding: '4px 8px', borderRadius: 4, fontSize: 12 }}>{statutLabel(order.statut)}</span>
           </div>
           {order.items?.map(item => (<div key={item.id} style={{ fontSize: 14, color: '#555', display: 'flex', justifyContent: 'space-between' }}><span>{item.product_nom} × {item.quantite}</span><span>{item.prix_unitaire * item.quantite} MRU</span></div>))}
           <div style={{ borderTop: '1px solid #eee', marginTop: 8, paddingTop: 8, display: 'flex', justifyContent: 'space-between' }}>

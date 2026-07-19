@@ -29,6 +29,7 @@ export default function SuperAdminDashboard() {
   const filtered = tab === 'en_attente' ? enAttente : tab === 'actif' ? actives : boutiques;
 
   const statutColors = { en_attente: '#ffc107', actif: '#28a745', rejete: '#dc3545', suspendu: '#6c757d' };
+  function statutLabel(s) { return { en_attente: t('statutEnAttente'), actif: t('statutActif'), rejete: t('statutRejete'), suspendu: t('statutSuspendu') }[s] || s; }
 
   return (
     <div style={{ fontFamily: 'Arial, sans-serif', minHeight: '100vh', background: '#f5f5f5', direction: dir }}>
@@ -57,7 +58,7 @@ export default function SuperAdminDashboard() {
                 <p style={{ margin: 0, color: '#999', fontSize: 12, marginTop: 4 }}>{t('registeredOn')} {new Date(b.date_creation).toLocaleDateString('fr-FR')} | {b.slug}</p>
               </div>
               <div style={{ textAlign: 'right' }}>
-                <span style={{ ...badgeStyle, background: statutColors[b.statut] }}>{b.statut}</span>
+                <span style={{ ...badgeStyle, background: statutColors[b.statut] }}>{statutLabel(b.statut)}</span>
                 {b.statut === 'actif' && b.abonnement_fin && <p style={{ margin: 0, fontSize: 12, color: '#666', marginTop: 4 }}>Fin: {new Date(b.abonnement_fin).toLocaleDateString('fr-FR')}</p>}
               </div>
             </div>

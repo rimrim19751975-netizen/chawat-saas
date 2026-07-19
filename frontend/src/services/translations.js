@@ -177,6 +177,18 @@ export default {
     suspended: "suspendu",
     awaiting: "en attente",
 
+    // Statuts
+    statutEnAttente: "En attente",
+    statutEnCours: "En cours",
+    statutLivre: "Livré",
+    statutActif: "Actif",
+    statutRejete: "Rejeté",
+    statutSuspendu: "Suspendu",
+
+    // Paiement
+    paid: "Payé",
+    unpaid: "Impayé",
+
     // Erreurs
     errLogin: "Email ou mot de passe incorrect",
     errPending: "Votre compte est en attente de validation. Veuillez payer l'abonnement.",
@@ -366,6 +378,18 @@ export default {
     rejected: "مرفوض",
     suspended: "معلق",
     awaiting: "قيد الانتظار",
+
+    // Statuts
+    statutEnAttente: "قيد الانتظار",
+    statutEnCours: "قيد المعالجة",
+    statutLivre: "تم التوصيل",
+    statutActif: "نشط",
+    statutRejete: "مرفوض",
+    statutSuspendu: "معلق",
+
+    // Paiement
+    paid: "مدفوع",
+    unpaid: "غير مدفوع",
 
     // Erreurs
     errLogin: "البريد الإلكتروني أو كلمة المرور غير صحيحة",
